@@ -203,11 +203,45 @@ class StorageService {
       const data = localStorage.getItem(KEYS.BILLS)
       if (data) return JSON.parse(data)
       const initialBills: Bill[] = [
-        { id: "INV-2847", customer: "Ramesh Sharma", items: 4, total: 342, time: "10:24 AM", paid: true, paymentType: "CASH" },
-        { id: "INV-2848", customer: "Walk-in", items: 2, total: 56, time: "11:05 AM", paid: true, paymentType: "UPI" },
-        { id: "INV-2849", customer: "Sunita Devi", items: 7, total: 890, time: "12:30 PM", paid: false, paymentType: "KHATA" },
-        { id: "INV-2850", customer: "Walk-in", items: 1, total: 28, time: "01:15 PM", paid: true, paymentType: "CASH" },
-        { id: "INV-2851", customer: "Mohd. Akhtar", items: 3, total: 215, time: "02:00 PM", paid: false, paymentType: "KHATA" },
+        {
+          id: "INV-2847",
+          customer: "Ramesh Sharma",
+          items: 4,
+          total: 342,
+          time: "10:24 AM",
+          paid: true,
+          paymentType: "CASH",
+          itemDetails: [
+            { product: { id: 1, name: "Fortune Sunlite Oil 1L", category: "Grocery", price: 145, stock: 40, minStock: 5, expiry: "2027-01-01", barcode: "8901234567890" }, qty: 2 },
+            { product: { id: 2, name: "Tata Salt 1kg", category: "Grocery", price: 26, stock: 50, minStock: 10, expiry: "2028-01-01", barcode: "8901234567891" }, qty: 2 },
+          ],
+        },
+        {
+          id: "INV-2848",
+          customer: "Walk-in",
+          items: 2,
+          total: 56,
+          time: "11:05 AM",
+          paid: true,
+          paymentType: "UPI",
+          itemDetails: [
+            { product: { id: 3, name: "Parle-G Gold 1kg", category: "Snacks", price: 28, stock: 60, minStock: 10, expiry: "2027-06-01", barcode: "8901234567892" }, qty: 2 },
+          ],
+        },
+        {
+          id: "INV-2849",
+          customer: "Sunita Devi",
+          items: 7,
+          total: 890,
+          time: "12:30 PM",
+          paid: false,
+          paymentType: "KHATA",
+          itemDetails: [
+            { product: { id: 4, name: "Aashirvaad Atta 5kg", category: "Grocery", price: 245, stock: 20, minStock: 5, expiry: "2027-04-01", barcode: "8901234567893" }, qty: 2 },
+            { product: { id: 5, name: "Amul Butter 500g", category: "Dairy", price: 280, stock: 15, minStock: 5, expiry: "2026-10-01", barcode: "8901234567894" }, qty: 1 },
+            { product: { id: 6, name: "Surf Excel 1kg", category: "FMCG", price: 120, stock: 30, minStock: 5, expiry: "2028-01-01", barcode: "8901234567895" }, qty: 1 },
+          ],
+        },
       ]
       localStorage.setItem(KEYS.BILLS, JSON.stringify(initialBills))
       return initialBills
