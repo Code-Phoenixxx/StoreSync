@@ -71,9 +71,14 @@ export default function TopBar({
   }
 
   const langs = [
-    { value: "en" as Lang, label: "EN" },
-    { value: "hi" as Lang, label: "हि" },
-    { value: "bn" as Lang, label: "বা" },
+    { value: "en" as Lang, label: "EN", name: "English" },
+    { value: "hi" as Lang, label: "हि", name: "हिंदी" },
+    { value: "bn" as Lang, label: "বা", name: "বাংলা" },
+    { value: "te" as Lang, label: "తె", name: "తెలుగు" },
+    { value: "ta" as Lang, label: "த", name: "தமிழ்" },
+    { value: "mr" as Lang, label: "म", name: "मराठी" },
+    { value: "gu" as Lang, label: "ગુ", name: "ગુજરાતી" },
+    { value: "kn" as Lang, label: "ಕ", name: "ಕನ್ನಡ" },
   ]
   const themeIcon = theme === "light" ? "☀️" : theme === "dark" ? "🌙" : "🧡"
 
@@ -182,21 +187,27 @@ export default function TopBar({
             )}
           </div>
 
-          {/* Language toggle */}
-          <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "rgba(255,255,255,0.14)" }}>
-            {langs.map(l => (
-              <button
-                key={l.value}
-                onClick={() => setLang(l.value)}
-                className="px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer"
-                style={{
-                  background: lang === l.value ? "var(--primary)" : "transparent",
-                  color: lang === l.value ? "#fff" : "rgba(255,255,255,0.6)",
-                }}
-              >
-                {l.label}
-              </button>
-            ))}
+          {/* Language selector dropdown */}
+          <div className="relative">
+            <select
+              value={lang}
+              onChange={e => setLang(e.target.value as Lang)}
+              className="appearance-none px-3 py-1.5 pr-7 rounded-lg text-xs font-bold border transition-all cursor-pointer outline-none shadow-sm"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                borderColor: "rgba(255,255,255,0.14)",
+                color: "#fff",
+              }}
+            >
+              {langs.map(l => (
+                <option key={l.value} value={l.value} style={{ background: "var(--card)", color: "var(--foreground)" }}>
+                  🌐 {l.name} ({l.label})
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-white/50 text-[10px]">
+              ▼
+            </div>
           </div>
 
           {/* Theme button */}

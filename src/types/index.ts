@@ -1,5 +1,5 @@
 export type Screen = "welcome" | "language" | "login" | "app"
-export type Lang = "en" | "hi" | "bn"
+export type Lang = "en" | "hi" | "bn" | "te" | "ta" | "mr" | "gu" | "kn"
 export type Theme = "light" | "dark" | "saffron"
 export type Module =
   | "dashboard" | "catalogue" | "billing" | "pos" | "khata" | "ocr"

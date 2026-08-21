@@ -62,6 +62,11 @@ export default function SettingsModule({
     { value: "en", label: "English", native: "English", flag: "🇬🇧" },
     { value: "hi", label: "Hindi", native: "हिंदी", flag: "🇮🇳" },
     { value: "bn", label: "Bengali", native: "বাংলা", flag: "🇧🇩" },
+    { value: "te", label: "Telugu", native: "తెలుగు", flag: "🇮🇳" },
+    { value: "ta", label: "Tamil", native: "தமிழ்", flag: "🇮🇳" },
+    { value: "mr", label: "Marathi", native: "मराठी", flag: "🇮🇳" },
+    { value: "gu", label: "Gujarati", native: "ગુજરાતી", flag: "🇮🇳" },
+    { value: "kn", label: "Kannada", native: "ಕನ್ನಡ", flag: "🇮🇳" },
   ]
 
   return (
