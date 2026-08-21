@@ -32,7 +32,9 @@ export default function App() {
   const [shopInfo, setShopInfo] = useState<ShopInfo>(initialSession.shopInfo)
   const [online, setOnline] = useState<boolean>(() => db.isOnline())
   const [syncing, setSyncing] = useState<boolean>(false)
+  const [pendingQueueCount, setPendingQueueCount] = useState<number>(() => db.getSyncQueue().length)
   const [showThemePage, setShowThemePage] = useState<boolean>(false)
+  const [networkToast, setNetworkToast] = useState<string | null>(null)
 
   // Manage Theme Classes
   useEffect(() => {
@@ -48,17 +50,29 @@ export default function App() {
       setOnline(status)
       if (status) {
         setSyncing(true)
-        setTimeout(() => setSyncing(false), 1200)
+        setNetworkToast("🟢 Back online! Syncing offline transactions with cloud...")
+        db.flushSyncQueue().then(() => {
+          setPendingQueueCount(db.getSyncQueue().length)
+          setSyncing(false)
+          setTimeout(() => setNetworkToast(null), 4000)
+        })
+      } else {
+        setNetworkToast("🔴 You are offline. All actions are cached locally and will auto-sync when online.")
+        setTimeout(() => setNetworkToast(null), 6000)
       }
     })
 
     const interval = setInterval(() => {
-      if (db.isOnline()) {
+      const q = db.getSyncQueue()
+      setPendingQueueCount(q.length)
+      if (db.isOnline() && q.length > 0) {
         setSyncing(true)
-        db.flushSyncQueue()
-        setTimeout(() => setSyncing(false), 1000)
+        db.flushSyncQueue().then(() => {
+          setPendingQueueCount(db.getSyncQueue().length)
+          setSyncing(false)
+        })
       }
-    }, 25000)
+    }, 15000)
 
     return () => {
       unsub()
@@ -129,6 +143,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ background: "var(--background)" }}>
+      {/* Network Alert Toast */}
+      {networkToast && (
+        <div
+          className={`px-4 py-2 text-center text-xs font-bold transition-all shadow-md ${
+            online ? "bg-emerald-500 text-white" : "bg-red-500 text-white"
+          }`}
+        >
+          {networkToast}
+        </div>
+      )}
+
       {/* Top Navigation Bar */}
       <TopBar
         lang={lang}
@@ -139,6 +164,7 @@ export default function App() {
         shopName={shopInfo.shopName}
         online={online}
         syncing={syncing}
+        pendingSyncCount={pendingQueueCount}
         onOpenTheme={() => setShowThemePage(true)}
       />
 

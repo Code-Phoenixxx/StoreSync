@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Lang, Theme } from "../../types"
 import { TR } from "../../constants/translations"
 import { db } from "../../services/storage"
@@ -16,12 +17,39 @@ export default function SettingsModule({
   onLogout?: () => void
 }) {
   const shopInfo = db.getShopInfo()
-  const syncQueue = db.getSyncQueue()
+  const [syncQueue, setSyncQueue] = useState(db.getSyncQueue())
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    const refreshQueue = () => setSyncQueue(db.getSyncQueue())
+    const interval = setInterval(refreshQueue, 2000)
+    return () => clearInterval(interval)
+  }, [])
 
   function handleLockApp() {
     if (confirm("Lock DukaanOS? You will need to enter your Security PIN to unlock.")) {
       db.clearSession()
       if (onLogout) onLogout()
+    }
+  }
+
+  async function handleForceSync() {
+    setIsSyncing(true)
+    setSyncMsg("Pushing pending transactions to cloud database...")
+    await db.flushSyncQueue()
+    setSyncQueue(db.getSyncQueue())
+    setTimeout(() => {
+      setIsSyncing(false)
+      setSyncMsg("✅ All offline records synced with cloud database successfully!")
+      setTimeout(() => setSyncMsg(null), 4000)
+    }, 1000)
+  }
+
+  function handleClearQueue() {
+    if (confirm("Clear pending offline buffer? This will discard unsynced actions.")) {
+      localStorage.removeItem("dukaanos_sync_queue_v1")
+      setSyncQueue([])
     }
   }
 
@@ -53,7 +81,7 @@ export default function SettingsModule({
           <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
             🏪 Shop Authentication & Security
           </h3>
-          <span className="text-xs px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 font-semibold">
             ✓ Authenticated Session
           </span>
         </div>
@@ -89,35 +117,74 @@ export default function SettingsModule({
         </div>
       </div>
 
-      {/* Offline Sync Engine Status */}
-      <div className="rounded-3xl border p-5 space-y-3 shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+      {/* Offline Sync Engine & Queue Inspector Card */}
+      <div className="rounded-3xl border p-5 space-y-4 shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
-            🔄 Offline Database & Auto-Sync Engine
-          </h3>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold">
-            {db.isOnline() ? "Online Mode" : "Offline Cache Active"}
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🔄</span>
+            <div>
+              <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
+                Offline Database & Sync Engine
+              </h3>
+              <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                IndexedDB / LocalStorage hybrid queue for zero network latency
+              </p>
+            </div>
+          </div>
+          <span
+            className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+              db.isOnline()
+                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                : "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
+            }`}
+          >
+            {db.isOnline() ? "🟢 Online" : "🔴 Offline Mode"}
           </span>
         </div>
-        <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-          All sales bills, stock updates, and supplier records are cached locally in IndexedDB / LocalStorage. Whenever connection is detected, pending actions are auto-flushed to the cloud.
-        </p>
-        <div className="flex items-center justify-between pt-2 text-xs">
-          <span style={{ color: "var(--muted-foreground)" }}>Pending Offline Transactions in Queue:</span>
-          <span className="font-mono font-bold" style={{ color: "var(--primary)" }}>
+
+        {syncMsg && (
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 text-xs font-semibold">
+            {syncMsg}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between text-xs pt-1">
+          <span style={{ color: "var(--muted-foreground)" }}>Transactions Waiting in Offline Sync Buffer:</span>
+          <span className="font-mono font-bold text-sm" style={{ color: "var(--primary)" }}>
             {syncQueue.length} items
           </span>
         </div>
-        <button
-          onClick={() => {
-            db.flushSyncQueue()
-            alert("✅ Sync complete! All local offline records pushed to cloud database.")
-          }}
-          className="px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all hover:opacity-90 cursor-pointer"
-          style={{ background: "var(--primary)", color: "#fff" }}
-        >
-          ⚡ Force Sync Now
-        </button>
+
+        {/* Sync Queue Item Details */}
+        {syncQueue.length > 0 && (
+          <div className="space-y-1.5 max-h-36 overflow-y-auto p-3 rounded-2xl border" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
+            {syncQueue.map((item, idx) => (
+              <div key={idx} className="flex justify-between text-[11px] font-mono border-b pb-1 last:border-0" style={{ borderColor: "var(--border)" }}>
+                <span className="font-bold text-amber-600 dark:text-amber-400">{item.type}</span>
+                <span style={{ color: "var(--muted-foreground)" }}>{new Date(item.timestamp).toLocaleTimeString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button
+            disabled={isSyncing || syncQueue.length === 0}
+            onClick={handleForceSync}
+            className="flex-1 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all hover:opacity-90 cursor-pointer disabled:opacity-40"
+            style={{ background: "var(--primary)", color: "#fff" }}
+          >
+            {isSyncing ? "⚡ Syncing..." : "⚡ Push Buffer to Cloud"}
+          </button>
+          {syncQueue.length > 0 && (
+            <button
+              onClick={handleClearQueue}
+              className="px-3 py-2.5 rounded-xl text-xs font-bold border border-red-300 dark:border-red-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
+            >
+              Clear Buffer
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Theme Picker */}
