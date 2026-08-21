@@ -85,8 +85,12 @@ export default function App() {
     setScreen("app")
   }
 
-  function handleLogout() {
+  function handleLockApp() {
     setScreen("login")
+  }
+
+  function handleLogout() {
+    setScreen("welcome")
   }
 
   // ── Onboarding Flows ──
@@ -135,6 +139,7 @@ export default function App() {
         setLang={setLang}
         theme={theme}
         setTheme={setTheme}
+        onLock={handleLockApp}
         onLogout={handleLogout}
       />
     ),

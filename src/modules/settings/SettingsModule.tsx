@@ -9,12 +9,14 @@ export default function SettingsModule({
   theme,
   setTheme,
   onLogout,
+  onLock,
 }: {
   lang: Lang
   setLang: (l: Lang) => void
   theme: Theme
   setTheme: (t: Theme) => void
   onLogout?: () => void
+  onLock?: () => void
 }) {
   const shopInfo = db.getShopInfo()
   const [syncQueue, setSyncQueue] = useState(db.getSyncQueue())
@@ -28,7 +30,16 @@ export default function SettingsModule({
   }, [])
 
   function handleLockApp() {
-    if (confirm("Lock DukaanOS? You will need to enter your Security PIN to unlock.")) {
+    db.clearSession()
+    if (onLock) {
+      onLock()
+    } else if (onLogout) {
+      onLogout()
+    }
+  }
+
+  function handleFullLogout() {
+    if (confirm("Are you sure you want to log out of StoreSyncOS?")) {
       db.clearSession()
       if (onLogout) onLogout()
     }
@@ -112,12 +123,18 @@ export default function SettingsModule({
           </div>
         </div>
 
-        <div className="pt-2 border-t flex gap-3" style={{ borderColor: "var(--border)" }}>
+        <div className="pt-2 border-t flex flex-wrap gap-3" style={{ borderColor: "var(--border)" }}>
           <button
             onClick={handleLockApp}
+            className="px-4 py-2 rounded-xl text-xs font-bold border border-amber-300 dark:border-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            🔒 Lock App (PIN Protect)
+          </button>
+          <button
+            onClick={handleFullLogout}
             className="px-4 py-2 rounded-xl text-xs font-bold border border-red-300 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all cursor-pointer flex items-center gap-1.5"
           >
-            🔒 Lock App / Switch Shop
+            🚪 Log Out of StoreSyncOS
           </button>
         </div>
       </div>
