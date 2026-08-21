@@ -355,6 +355,15 @@ class StorageService {
     return updated
   }
 
+  public deleteCustomer(customerId: number): Customer[] {
+    const customers = this.getCustomers()
+    const updated = customers.filter(c => c.id !== customerId)
+    localStorage.setItem(KEYS.CUSTOMERS, JSON.stringify(updated))
+    this.queueAction({ type: "DELETE_CUSTOMER", payload: { customerId } })
+    return updated
+  }
+
+
   // ── Suppliers (CRUD) ───────────────────────────────────────────────────────
   public getSuppliers(): Supplier[] {
     try {
