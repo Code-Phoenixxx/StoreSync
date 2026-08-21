@@ -40,14 +40,25 @@ function playChime(type: "start" | "success" | "action") {
 }
 
 // Polyfill types for Web Speech API
+interface SpeechRecognitionResultItem {
+  transcript: string
+  confidence?: number
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionResultItem
+  isFinal: boolean
+  length: number
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult
+  length: number
+}
+
 interface SpeechRecognitionEvent extends Event {
-  results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string
-      }
-    }
-  }
+  resultIndex: number
+  results: SpeechRecognitionResultList
 }
 
 interface SpeechRecognitionInstance extends EventTarget {
@@ -75,6 +86,7 @@ export default function VoiceModule({ lang }: { lang: Lang }) {
   const [isListening, setIsListening] = useState(false)
   const [continuousMode, setContinuousMode] = useState(false)
   const [transcript, setTranscript] = useState("")
+  const [liveInputText, setLiveInputText] = useState("")
   const [aiResponse, setAiResponse] = useState<string>("")
   const [speechSupported, setSpeechSupported] = useState(true)
   const [voiceLang, setVoiceLang] = useState<"en-IN" | "hi-IN" | "bn-IN">("en-IN")
@@ -144,15 +156,32 @@ export default function VoiceModule({ lang }: { lang: Lang }) {
     try {
       const rec = new SpeechRecognition()
       rec.continuous = false
-      rec.interimResults = false
+      rec.interimResults = true
       rec.lang = voiceLang
 
       rec.onresult = (e: SpeechRecognitionEvent) => {
-        const spokenText = e.results[0][0].transcript
-        setTranscript(spokenText)
-        setIsListening(false)
-        playChime("success")
-        handleProcessVoiceCommand(spokenText)
+        let interim = ""
+        let final = ""
+
+        for (let i = e.resultIndex || 0; i < e.results.length; ++i) {
+          if (e.results[i].isFinal) {
+            final += e.results[i][0].transcript
+          } else {
+            interim += e.results[i][0].transcript
+          }
+        }
+
+        if (interim) {
+          setLiveInputText(interim)
+        }
+
+        if (final) {
+          setTranscript(final)
+          setLiveInputText("")
+          setIsListening(false)
+          playChime("success")
+          handleProcessVoiceCommand(final)
+        }
       }
 
       rec.onerror = () => {
@@ -517,7 +546,24 @@ export default function VoiceModule({ lang }: { lang: Lang }) {
           </div>
         )}
 
+        {/* Real-time Live Speech Input Stream Display */}
+        {(isListening || liveInputText) && (
+          <div className="w-full max-w-lg p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-400/50 text-left space-y-1.5 slide-up shadow-xl relative z-10 backdrop-blur-xs">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-500 font-mono">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping inline-block" />
+                ● Live Real-Time Transcription:
+              </span>
+              <span className="text-[10px] text-gray-400 font-mono animate-pulse">Capturing voice...</span>
+            </div>
+            <p className="font-display font-black text-base sm:text-lg text-white leading-relaxed min-h-[1.75rem]">
+              {liveInputText ? `"${liveInputText}"` : <span className="text-gray-400 font-normal italic">Speak clearly into microphone...</span>}
+            </p>
+          </div>
+        )}
+
         {/* Audio Tuning Drawer */}
+
         <div className="w-full pt-4 border-t flex flex-wrap items-center justify-between gap-4 text-xs" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center gap-2">
             <span className="text-gray-400 font-semibold">Pitch:</span>
