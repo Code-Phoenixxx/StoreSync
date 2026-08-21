@@ -361,10 +361,12 @@ Return ONLY valid JSON format:
           <button
             onClick={() => {
               setActiveTab("samples")
+              setParsedInvoice(null)
+              setImagePreview(null)
               stopCamera()
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "samples" ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300"
+              activeTab === "samples" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
             }`}
           >
             ⚡ Demo Invoices
@@ -372,10 +374,12 @@ Return ONLY valid JSON format:
           <button
             onClick={() => {
               setActiveTab("upload")
+              setParsedInvoice(null)
+              setImagePreview(null)
               stopCamera()
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "upload" ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300"
+              activeTab === "upload" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
             }`}
           >
             📁 File Upload
@@ -383,10 +387,12 @@ Return ONLY valid JSON format:
           <button
             onClick={() => {
               setActiveTab("camera")
+              setParsedInvoice(null)
+              setImagePreview(null)
               startCamera()
             }}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "camera" ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300"
+              activeTab === "camera" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
             }`}
           >
             📷 Live Camera
