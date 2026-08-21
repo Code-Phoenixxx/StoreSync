@@ -97,6 +97,18 @@ const SAMPLE_BILLS: { title: string; subtitle: string; icon: string; data: Parse
   },
 ]
 
+// Common non-product keywords to exclude from line items
+const EXCLUDED_KEYWORDS = [
+  "road", "street", "marg", "nagar", "colony", "lane", "flat", "floor", "block", "plot", "sector",
+  "near", "opp", "beside", "behind", "city", "district", "state", "pincode", "pin", "delhi", "mumbai",
+  "bangalore", "kolkata", "jaipur", "chennai", "hyderabad", "ahmedabad", "pune", "india",
+  "gstin", "cin", "pan", "fssai", "tel", "mob", "phone", "email", "website", "www", "buyer", "seller",
+  "consignee", "bill to", "ship to", "bank", "ifsc", "a/c", "branch", "terms", "conditions",
+  "signature", "e.&o.e", "invoice", "tax invoice", "cash memo", "original for recipient", "duplicate",
+  "subtotal", "grand total", "cgst", "sgst", "igst", "round off", "description", "particulars", "rate",
+  "amount", "hsn", "sac", "qty", "quantity", "unit", "total", "thank you", "visit again"
+]
+
 export default function OCRModule({ lang }: { lang: Lang }) {
   const [activeTab, setActiveTab] = useState<"upload" | "camera" | "samples">("upload")
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -182,7 +194,9 @@ export default function OCRModule({ lang }: { lang: Lang }) {
     // Try to find supplier name in first 3 lines
     for (let i = 0; i < Math.min(4, lines.length); i++) {
       const line = lines[i]
-      if (!/\d{5,}/.test(line) && !line.toLowerCase().includes("invoice") && !line.toLowerCase().includes("bill") && line.length > 3) {
+      const lower = line.toLowerCase()
+      const isExcluded = EXCLUDED_KEYWORDS.some(k => lower.includes(k))
+      if (!isExcluded && !/\d{5,}/.test(line) && line.length > 3) {
         supplierName = line.replace(/[^a-zA-Z0-9\s&.-]/g, "").trim() || supplierName
         break
       }
@@ -202,31 +216,25 @@ export default function OCRModule({ lang }: { lang: Lang }) {
 
     // Parse item lines
     lines.forEach((line, idx) => {
-      // Ignore header/footer noise
       const lower = line.toLowerCase()
-      if (
-        lower.includes("total") ||
-        lower.includes("gst") ||
-        lower.includes("tax") ||
-        lower.includes("subtotal") ||
-        lower.includes("thank you") ||
-        lower.includes("phone") ||
-        lower.includes("address") ||
-        lower.includes("date") ||
-        lower.includes("invoice") ||
-        lower.includes("cash")
-      ) {
+      // Skip address, tax, phone, headers, and metadata lines
+      if (EXCLUDED_KEYWORDS.some(k => lower.includes(k))) {
         return
       }
 
-      // Pattern: Item Name ... Qty ... Price
-      // Matches lines with numbers at the end
+      // Check if line contains a phone number (10 digits) or pincode (6 digits) and skip
+      if (/\b\d{10}\b/.test(line) || /\b\d{6}\b/.test(line)) {
+        return
+      }
+
+      // Extract numbers
       const numbersInLine = line.match(/(\d+(?:\.\d{1,2})?)/g)
       if (numbersInLine && numbersInLine.length >= 1) {
-        // Strip numbers from the line to get the product name
-        const textParts = line.replace(/[\d.,/-]+/g, " ").trim()
-        if (textParts.length >= 2) {
-          const numbers = numbersInLine.map(Number).filter(n => !isNaN(n) && n > 0)
+        const textParts = line.replace(/[\d.,/-]+/g, " ").replace(/[^a-zA-Z0-9\s]/g, "").trim()
+
+        // Ensure text is an actual product name (at least 3 characters, not just pure digits or symbols)
+        if (textParts.length >= 3 && !EXCLUDED_KEYWORDS.some(k => textParts.toLowerCase().includes(k))) {
+          const numbers = numbersInLine.map(Number).filter(n => !isNaN(n) && n > 0 && n < 50000)
           let qty = 1
           let price = 50
 
@@ -248,7 +256,7 @@ export default function OCRModule({ lang }: { lang: Lang }) {
 
           items.push({
             id: String(idx + 1),
-            name: textParts.slice(0, 45),
+            name: textParts.slice(0, 50),
             category,
             quantity: Math.max(1, Math.round(qty)),
             costPrice: Math.round(price),
@@ -257,22 +265,6 @@ export default function OCRModule({ lang }: { lang: Lang }) {
         }
       }
     })
-
-    // If no line items could be parsed with numbers, fallback to non-empty lines
-    if (items.length === 0) {
-      lines.slice(0, 5).forEach((line, i) => {
-        if (line.length > 2) {
-          items.push({
-            id: String(i + 1),
-            name: line.slice(0, 40),
-            category: "General",
-            quantity: 1,
-            costPrice: 100,
-            sellingPrice: 125,
-          })
-        }
-      })
-    }
 
     const total = items.reduce((s, x) => s + x.costPrice * x.quantity, 0)
     return {
@@ -286,7 +278,7 @@ export default function OCRModule({ lang }: { lang: Lang }) {
     }
   }
 
-  // Execute OCR Scan (Real Tesseract.js OCR + Optional Gemini Vision)
+  // Execute OCR Scan (Gemini 1.5 Flash Vision AI + Client-Side Tesseract.js Fallback)
   async function processOCRScan(imageDataOrSample: string, sampleData?: ParsedInvoice) {
     setIsScanning(true)
     setScanProgress(10)
@@ -306,61 +298,90 @@ export default function OCRModule({ lang }: { lang: Lang }) {
       // 2. If Gemini API Key is provided in .env
       const activeApiKey = import.meta.env.VITE_GEMINI_API_KEY
       if (activeApiKey && navigator.onLine && imageDataOrSample.startsWith("data:image")) {
-        setScanStatusMsg("Running Gemini 1.5 Flash Vision AI...")
+        setScanStatusMsg("Running Google Gemini 1.5 Flash Vision AI...")
         setScanProgress(40)
-        const base64Data = imageDataOrSample.split(",")[1]
-        const prompt = `Extract all line items, supplier name, invoice number, quantities, and cost prices from this receipt image.
-Return ONLY valid JSON format with this exact structure:
+
+        // Parse exact base64 data and mime type
+        const mimeMatch = imageDataOrSample.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.*)$/)
+        const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg"
+        const base64Data = mimeMatch ? mimeMatch[2] : imageDataOrSample.split(",")[1]
+
+        const prompt = `You are a specialized retail invoice OCR parser.
+Analyze this supplier bill / purchase receipt image carefully.
+CRITICAL INSTRUCTIONS:
+1. "items" array MUST ONLY contain actual physical purchased products / inventory items (e.g. "Chana Dal 1kg", "Fortune Oil 1L", "Parle-G 100g").
+2. DO NOT include addresses, street names, pincodes, customer details, shop descriptions, bank details, GSTIN, phone numbers, or terms in the "items" list.
+3. For each real product, extract its name, category, quantity, cost price (per unit or total), and reasonable selling price.
+
+Return ONLY a valid JSON object matching this schema:
 {
-  "supplierName": "Supplier Name",
-  "invoiceNumber": "INV-1234",
+  "supplierName": "Name of Supplier / Vendor / Company",
+  "invoiceNumber": "Invoice or Bill Number",
   "invoiceDate": "YYYY-MM-DD",
-  "totalAmount": 1000,
+  "totalAmount": 1500,
   "gstAmount": 0,
   "items": [
-    { "id": "1", "name": "Item Name", "category": "Staples", "quantity": 10, "costPrice": 90, "sellingPrice": 110, "barcode": "890123" }
+    {
+      "id": "1",
+      "name": "Exact Product Name",
+      "category": "Staples/Snacks/Dairy/Personal Care/Household/General",
+      "quantity": 10,
+      "costPrice": 100,
+      "sellingPrice": 125,
+      "barcode": ""
+    }
   ]
 }`
 
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeApiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-                ],
-              },
-            ],
-          }),
-        })
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeApiKey}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: prompt },
+                    { inlineData: { mimeType, data: base64Data } },
+                  ],
+                },
+              ],
+            }),
+          })
 
-        if (res.ok) {
-          const jsonResp = await res.json()
-          const text = jsonResp.candidates?.[0]?.content?.parts?.[0]?.text
-          if (text) {
-            const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim()
-            const parsed = JSON.parse(cleanJson)
-            setParsedInvoice(parsed)
-            setIsScanning(false)
-            return
+          if (res.ok) {
+            const jsonResp = await res.json()
+            const text = jsonResp.candidates?.[0]?.content?.parts?.[0]?.text
+            if (text) {
+              const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim()
+              const parsed = JSON.parse(cleanJson)
+              if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+                console.log("[Gemini Vision OCR Success]:", parsed)
+                setParsedInvoice(parsed)
+                setIsScanning(false)
+                return
+              }
+            }
+          } else {
+            const errData = await res.json()
+            console.error("[Gemini API Error Response]:", errData)
           }
+        } catch (geminiErr) {
+          console.error("[Gemini API Call Failed]:", geminiErr)
         }
       }
 
-      // 3. Real Client-Side Tesseract.js OCR Execution
+      // 3. Client-Side Tesseract.js OCR Execution
       setScanStatusMsg("Running Tesseract OCR on image pixels...")
-      setScanProgress(30)
+      setScanProgress(50)
 
       const worker = await createWorker("eng")
-      setScanProgress(60)
+      setScanProgress(75)
       setScanStatusMsg("Extracting printed words & characters...")
 
       const result = await worker.recognize(imageDataOrSample)
       setScanProgress(90)
-      setScanStatusMsg("Structuring line items & prices...")
+      setScanStatusMsg("Filtering items and removing address headers...")
 
       const rawText = result.data.text
       await worker.terminate()
@@ -371,12 +392,10 @@ Return ONLY valid JSON format with this exact structure:
         const parsed = parseRawReceiptText(rawText)
         setParsedInvoice(parsed)
       } else {
-        // Fallback to sample if image is completely blank/unreadable
         setParsedInvoice(SAMPLE_BILLS[0].data)
       }
     } catch (err) {
       console.error("[OCR Engine Error]", err)
-      // Fallback
       setParsedInvoice(SAMPLE_BILLS[0].data)
     } finally {
       setIsScanning(false)
@@ -478,7 +497,7 @@ Return ONLY valid JSON format with this exact structure:
               {TR[lang]?.ocr || "Bill Scanner"} & Optical Receipt Parser
             </h2>
             <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-              Real Tesseract OCR & Gemini Vision stock intake from supplier purchase invoices
+              Real Gemini Vision & Tesseract OCR inventory intake from supplier purchase invoices
             </p>
           </div>
         </div>
@@ -546,7 +565,7 @@ Return ONLY valid JSON format with this exact structure:
                   Click to Browse or Drag & Drop Supplier Invoice
                 </p>
                 <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>
-                  Upload your real bill image (JPG, PNG) — Tesseract OCR reads the actual text and prices!
+                  Upload your bill image (JPG, PNG) — AI vision automatically extracts product names, quantities, and rates!
                 </p>
               </div>
               <button
@@ -646,7 +665,7 @@ Return ONLY valid JSON format with this exact structure:
               {scanStatusMsg}
             </h3>
             <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-              Extracting line items, purchase costs, quantities, and GST numbers with Tesseract OCR engine.
+              Extracting line items, purchase costs, quantities, and GST numbers with AI vision engine.
             </p>
           </div>
 
@@ -679,7 +698,7 @@ Return ONLY valid JSON format with this exact structure:
                   <span>Date: <strong>{parsedInvoice.invoiceDate}</strong></span>
                   <span>•</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                    ✓ Optical OCR Extracted
+                    ✓ Clean Merchandise Extraction
                   </span>
                 </div>
               </div>
@@ -718,7 +737,7 @@ Return ONLY valid JSON format with this exact structure:
           {/* Optional Raw OCR Text Viewer */}
           {showRawText && parsedInvoice.rawText && (
             <div className="p-4 rounded-2xl border font-mono text-xs whitespace-pre-wrap max-h-48 overflow-y-auto" style={{ background: "var(--muted)", borderColor: "var(--border)", color: "var(--foreground)" }}>
-              <p className="font-bold text-[11px] uppercase mb-2 text-amber-500">📄 Raw Tesseract OCR Output:</p>
+              <p className="font-bold text-[11px] uppercase mb-2 text-amber-500">📄 Raw OCR Output:</p>
               {parsedInvoice.rawText}
             </div>
           )}
@@ -731,10 +750,10 @@ Return ONLY valid JSON format with this exact structure:
             <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: "var(--border)", background: "var(--muted)" }}>
               <div className="flex items-center gap-2">
                 <span className="font-display font-bold text-sm" style={{ color: "var(--foreground)" }}>
-                  📋 Extracted Line Items ({parsedInvoice.items.length})
+                  📋 Extracted Products ({parsedInvoice.items.length})
                 </span>
                 <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                  (Click any value to edit or correct OCR results)
+                  (Address and header details filtered out)
                 </span>
               </div>
               <button
@@ -849,7 +868,7 @@ Return ONLY valid JSON format with this exact structure:
             {/* Bottom Actions Footer */}
             <div className="p-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ borderColor: "var(--border)", background: "var(--muted)" }}>
               <div className="flex items-center gap-4 text-xs font-semibold" style={{ color: "var(--foreground)" }}>
-                <span>Total Items: <strong>{parsedInvoice.items.length}</strong></span>
+                <span>Total Products: <strong>{parsedInvoice.items.length}</strong></span>
                 <span>•</span>
                 <span>Total Units: <strong>{parsedInvoice.items.reduce((s, x) => s + Number(x.quantity), 0)}</strong></span>
                 <span>•</span>
