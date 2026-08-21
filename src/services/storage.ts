@@ -293,6 +293,15 @@ class StorageService {
     return { bill: newBill, updatedProducts }
   }
 
+  public deleteBill(id: string): Bill[] {
+    const bills = this.getBills()
+    const updated = bills.filter(b => b.id !== id)
+    localStorage.setItem(KEYS.BILLS, JSON.stringify(updated))
+    this.queueAction({ type: "DELETE_BILL", payload: { id } })
+    return updated
+  }
+
+
   // ── Khata (Customers) ──────────────────────────────────────────────────────
   public getCustomers(): Customer[] {
     try {
@@ -345,6 +354,15 @@ class StorageService {
 
     return updated
   }
+
+  public deleteCustomer(customerId: number): Customer[] {
+    const customers = this.getCustomers()
+    const updated = customers.filter(c => c.id !== customerId)
+    localStorage.setItem(KEYS.CUSTOMERS, JSON.stringify(updated))
+    this.queueAction({ type: "DELETE_CUSTOMER", payload: { customerId } })
+    return updated
+  }
+
 
   // ── Suppliers (CRUD) ───────────────────────────────────────────────────────
   public getSuppliers(): Supplier[] {
