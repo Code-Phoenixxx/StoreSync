@@ -90,6 +90,8 @@ export default function App() {
   }
 
   function handleLogout() {
+    db.clearSession()
+    setActiveModule("dashboard")
     setScreen("welcome")
   }
 
