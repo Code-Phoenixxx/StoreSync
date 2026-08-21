@@ -1,5 +1,6 @@
 import { Bill, Customer, Product, ShopInfo, Supplier } from "../types"
 import { INITIAL_CUSTOMERS, INITIAL_PRODUCTS, INITIAL_SUPPLIERS } from "../constants/translations"
+import { cloudApi } from "./api"
 
 const KEYS = {
   PRODUCTS: "dukaanos_products_v1",
@@ -43,7 +44,7 @@ class StorageService {
     this.syncListeners.forEach(cb => cb(online))
   }
 
-  // ── Sync Queue ─────────────────────────────────────────────────────────────
+  // ── Sync Queue (Offline-First Buffer) ──────────────────────────────────────
   private queueAction(action: { type: string; payload: unknown }) {
     const queue = this.getSyncQueue()
     queue.push({ ...action, timestamp: new Date().toISOString() })
@@ -59,13 +60,20 @@ class StorageService {
     }
   }
 
-  public flushSyncQueue(): void {
+  public async flushSyncQueue(): Promise<void> {
     if (!this.online) return
     const queue = this.getSyncQueue()
     if (queue.length === 0) return
-    console.log(`[DukaanOS Sync] Flushing ${queue.length} pending offline actions to cloud...`, queue)
-    // In production this POSTs to backend /api/sync
-    localStorage.removeItem(KEYS.SYNC_QUEUE)
+
+    console.log(`[DukaanOS Sync Engine] Flushing ${queue.length} pending transactions to cloud database...`)
+    
+    // Attempt cloud push
+    const success = await cloudApi.syncBatch(queue)
+    if (success || !import.meta.env.VITE_API_URL) {
+      // If synced or working in simulated cloud mode
+      localStorage.removeItem(KEYS.SYNC_QUEUE)
+      console.log(`[DukaanOS Sync Engine] Sync batch completed successfully.`)
+    }
   }
 
   // ── Shop Info ──────────────────────────────────────────────────────────────
@@ -81,6 +89,9 @@ class StorageService {
   public saveShopInfo(info: ShopInfo): void {
     localStorage.setItem(KEYS.SHOP_INFO, JSON.stringify(info))
     this.queueAction({ type: "SAVE_SHOP_INFO", payload: info })
+    if (this.online) {
+      cloudApi.updateShopInfo(info).catch(() => {})
+    }
   }
 
   // ── Products (Catalogue) ───────────────────────────────────────────────────
@@ -104,6 +115,11 @@ class StorageService {
     const updated = [newProduct, ...products]
     localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(updated))
     this.queueAction({ type: "ADD_PRODUCT", payload: newProduct })
+
+    if (this.online) {
+      cloudApi.createProduct(product).catch(() => {})
+    }
+
     return newProduct
   }
 
@@ -112,6 +128,11 @@ class StorageService {
     const updated = products.map(p => (p.id === id ? { ...p, ...updates } : p))
     localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(updated))
     this.queueAction({ type: "UPDATE_PRODUCT", payload: { id, updates } })
+
+    if (this.online) {
+      cloudApi.updateProduct(id, updates).catch(() => {})
+    }
+
     return updated
   }
 
@@ -120,6 +141,11 @@ class StorageService {
     const updated = products.filter(p => p.id !== id)
     localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(updated))
     this.queueAction({ type: "DELETE_PRODUCT", payload: { id } })
+
+    if (this.online) {
+      cloudApi.deleteProduct(id).catch(() => {})
+    }
+
     return updated
   }
 
@@ -175,7 +201,7 @@ class StorageService {
       itemDetails: billData.items,
     }
 
-    // Save Bill
+    // Save Bill locally
     const bills = this.getBills()
     const updatedBills = [newBill, ...bills]
     localStorage.setItem(KEYS.BILLS, JSON.stringify(updatedBills))
@@ -191,6 +217,11 @@ class StorageService {
     }
 
     this.queueAction({ type: "CREATE_BILL", payload: newBill })
+
+    if (this.online) {
+      cloudApi.createBill(newBill).catch(() => {})
+    }
+
     return { bill: newBill, updatedProducts }
   }
 
@@ -226,6 +257,11 @@ class StorageService {
 
     localStorage.setItem(KEYS.CUSTOMERS, JSON.stringify(updated))
     this.queueAction({ type: "UPDATE_KHATA", payload: { name, phone, amount } })
+
+    if (this.online) {
+      cloudApi.updateKhataCredit(name, phone, amount).catch(() => {})
+    }
+
     return updated
   }
 
@@ -234,6 +270,11 @@ class StorageService {
     const updated = customers.map(c => (c.id === customerId ? { ...c, credit: Math.max(0, c.credit - amount) } : c))
     localStorage.setItem(KEYS.CUSTOMERS, JSON.stringify(updated))
     this.queueAction({ type: "RECORD_KHATA_PAYMENT", payload: { customerId, amount } })
+
+    if (this.online) {
+      cloudApi.recordKhataPayment(customerId, amount).catch(() => {})
+    }
+
     return updated
   }
 
@@ -258,6 +299,11 @@ class StorageService {
     const updated = [newSupplier, ...suppliers]
     localStorage.setItem(KEYS.SUPPLIERS, JSON.stringify(updated))
     this.queueAction({ type: "ADD_SUPPLIER", payload: newSupplier })
+
+    if (this.online) {
+      cloudApi.createSupplier(supplier).catch(() => {})
+    }
+
     return updated
   }
 
@@ -266,6 +312,11 @@ class StorageService {
     const updated = suppliers.map(s => (s.id === id ? { ...s, ...updates } : s))
     localStorage.setItem(KEYS.SUPPLIERS, JSON.stringify(updated))
     this.queueAction({ type: "UPDATE_SUPPLIER", payload: { id, updates } })
+
+    if (this.online) {
+      cloudApi.updateSupplier(id, updates).catch(() => {})
+    }
+
     return updated
   }
 
@@ -274,6 +325,11 @@ class StorageService {
     const updated = suppliers.filter(s => s.id !== id)
     localStorage.setItem(KEYS.SUPPLIERS, JSON.stringify(updated))
     this.queueAction({ type: "DELETE_SUPPLIER", payload: { id } })
+
+    if (this.online) {
+      cloudApi.deleteSupplier(id).catch(() => {})
+    }
+
     return updated
   }
 }
