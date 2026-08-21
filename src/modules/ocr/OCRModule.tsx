@@ -30,17 +30,14 @@ export default function OCRModule({ lang }: { lang: Lang }) {
   const [parsedInvoice, setParsedInvoice] = useState<ParsedInvoice | null>(null)
   const [successToast, setSuccessToast] = useState<string | null>(null)
   const [isCameraActive, setIsCameraActive] = useState(false)
-  const [cameraError, setCameraError] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const cameraInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
 
   // Start Web Camera Feed
   async function startCamera() {
-    setCameraError(null)
     try {
       setIsCameraActive(true)
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -52,7 +49,7 @@ export default function OCRModule({ lang }: { lang: Lang }) {
       }
     } catch (err) {
       console.error("[OCR Camera Error]", err)
-      setCameraError("Mobile browser blocked live streaming over HTTP. Tap below to use your Phone's Native Camera App instead!")
+      alert("Unable to access camera. Please check camera permissions or use File Upload.")
       setIsCameraActive(false)
     }
   }
@@ -326,101 +323,64 @@ Return ONLY valid JSON format:
       {/* Input Selection Sections */}
       {!parsedInvoice && !isScanning && (
         <div className="space-y-6">
-          {/* TAB 1: Drag & Drop File Upload & Phone Camera Trigger */}
+          {/* TAB 1: Drag & Drop File Upload */}
           {activeTab === "upload" && (
             <div
-              className="rounded-3xl border-2 border-dashed p-8 md:p-12 text-center flex flex-col items-center gap-4 shadow-sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-3xl border-2 border-dashed p-12 text-center flex flex-col items-center gap-4 shadow-sm hover:border-amber-500 transition-all cursor-pointer"
               style={{ borderColor: "var(--border)", background: "var(--card)" }}
             >
-              {/* Native Mobile Camera Input (Works on all phones over HTTP) */}
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileUpload} className="hidden" />
-              {/* Standard File Picker */}
               <input ref={fileInputRef} type="file" accept="image/*,.pdf" onChange={handleFileUpload} className="hidden" />
-
               <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-inner" style={{ background: "var(--muted)" }}>
-                📸
+                📁
               </div>
               <div>
                 <p className="font-display font-bold text-lg" style={{ color: "var(--foreground)" }}>
-                  Scan or Upload Supplier Invoice
+                  Click to Browse or Drag & Drop Supplier Invoice
                 </p>
                 <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>
-                  Take a photo directly with your phone or browse gallery / PDFs
+                  Supports JPG, PNG, WebP or Camera Scans of physical receipts
                 </p>
               </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm mt-2">
-                <button
-                  type="button"
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="w-full py-3.5 px-6 rounded-2xl font-display font-bold text-sm shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-                  style={{ background: "var(--primary)", color: "#1A0A00" }}
-                >
-                  📸 Snap with Phone Camera
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3.5 px-6 rounded-2xl font-bold text-xs border transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer flex items-center justify-center gap-2"
-                  style={{ borderColor: "var(--border)", color: "var(--foreground)" }}
-                >
-                  📁 Choose File / Gallery
-                </button>
-              </div>
+              <button
+                className="px-6 py-3 rounded-2xl font-bold text-xs shadow-md transition-all pointer-events-none"
+                style={{ background: "var(--primary)", color: "#1A0A00" }}
+              >
+                Choose Invoice File
+              </button>
             </div>
           )}
 
-          {/* TAB 2: Live Web Camera Stream / Fallback */}
+          {/* TAB 2: Live Web Camera Stream */}
           {activeTab === "camera" && (
             <div className="rounded-3xl border p-6 shadow-xl flex flex-col items-center space-y-4" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-              {cameraError ? (
-                <div className="p-6 rounded-2xl border text-center space-y-3 max-w-md" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
-                  <span className="text-4xl">📱</span>
-                  <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
-                    Phone Camera Access
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: "var(--muted-foreground)" }}>
-                    Mobile browsers restrict live video streaming over local HTTP Wi-Fi. You can use your phone's native camera directly below:
-                  </p>
-                  <button
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="w-full py-3.5 px-6 rounded-2xl font-display font-bold text-sm shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
-                    style={{ background: "var(--primary)", color: "#1A0A00" }}
-                  >
-                    📸 Open Phone Camera Shutter
-                  </button>
+              <div className="relative w-full max-w-lg aspect-video rounded-2xl overflow-hidden bg-black flex items-center justify-center border shadow-inner">
+                <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                <canvas ref={canvasRef} className="hidden" />
+                {/* Visual Viewfinder Frame */}
+                <div className="absolute inset-4 border-2 border-amber-400/80 rounded-xl pointer-events-none flex items-center justify-center">
+                  <span className="text-[11px] font-mono bg-black/60 text-amber-300 px-3 py-1 rounded-full">
+                    Align invoice receipt within box
+                  </span>
                 </div>
-              ) : (
-                <>
-                  <div className="relative w-full max-w-lg aspect-video rounded-2xl overflow-hidden bg-black flex items-center justify-center border shadow-inner">
-                    <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                    <canvas ref={canvasRef} className="hidden" />
-                    {/* Visual Viewfinder Frame */}
-                    <div className="absolute inset-4 border-2 border-amber-400/80 rounded-xl pointer-events-none flex items-center justify-center">
-                      <span className="text-[11px] font-mono bg-black/60 text-amber-300 px-3 py-1 rounded-full">
-                        Align invoice receipt within box
-                      </span>
-                    </div>
-                  </div>
+              </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={capturePhoto}
-                      className="px-8 py-3.5 rounded-2xl font-display font-bold text-sm shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2"
-                      style={{ background: "var(--primary)", color: "#1A0A00" }}
-                    >
-                      📸 Capture & Parse Bill
-                    </button>
-                    <button
-                      onClick={stopCamera}
-                      className="px-5 py-3.5 rounded-2xl font-bold text-xs border transition-all hover:bg-red-50 dark:hover:bg-red-950/30 text-red-500 cursor-pointer"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={capturePhoto}
+                  className="px-8 py-3.5 rounded-2xl font-display font-bold text-sm shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-2"
+                  style={{ background: "var(--primary)", color: "#1A0A00" }}
+                >
+                  📸 Capture & Parse Bill
+                </button>
+                <button
+                  onClick={stopCamera}
+                  className="px-5 py-3.5 rounded-2xl font-bold text-xs border transition-all hover:bg-red-50 dark:hover:bg-red-950/30 text-red-500 cursor-pointer"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
         </div>
