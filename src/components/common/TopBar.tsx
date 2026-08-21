@@ -71,16 +71,21 @@ export default function TopBar({
   }
 
   const langs = [
-    { value: "en" as Lang, label: "EN" },
-    { value: "hi" as Lang, label: "हि" },
-    { value: "bn" as Lang, label: "বা" },
+    { value: "en" as Lang, label: "EN", name: "English" },
+    { value: "hi" as Lang, label: "हि", name: "हिंदी" },
+    { value: "bn" as Lang, label: "বা", name: "বাংলা" },
+    { value: "te" as Lang, label: "తె", name: "తెలుగు" },
+    { value: "ta" as Lang, label: "த", name: "தமிழ்" },
+    { value: "mr" as Lang, label: "म", name: "मराठी" },
+    { value: "gu" as Lang, label: "ગુ", name: "ગુજરાતી" },
+    { value: "kn" as Lang, label: "ಕ", name: "ಕನ್ನಡ" },
   ]
   const themeIcon = theme === "light" ? "☀️" : theme === "dark" ? "🌙" : "🧡"
 
   return (
     <header className="sticky top-0 z-50 shadow-md" style={{ background: "var(--secondary)" }}>
       <div className="flex items-center h-16 px-6 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-        {/* Logo — clicking goes to dashboard */}
+        {/* 1. Shop Logo on Far Left */}
         <button
           onClick={() => setModule("dashboard")}
           className="flex items-center gap-2.5 font-display font-black text-xl select-none shrink-0 cursor-pointer"
@@ -90,74 +95,74 @@ export default function TopBar({
           🏪 <span className="hidden sm:inline" style={{ color: "#fff" }}>{shopName || TR[lang].appName}</span>
         </button>
 
-        {/* Spacer between logo and nav */}
-        <div className="hidden md:block w-12 shrink-0" />
+        {/* 2. flex-1 Spacer */}
+        <div className="flex-1" />
 
-        {/* Full navigation */}
-        <nav className="hidden md:flex items-center gap-1 flex-1">
-          {NAV_GROUPS.map((grp, i) => {
-            const isActive =
-              grp.module === activeModule || grp.children?.some(c => c.module === activeModule)
-            return (
-              <div
-                key={i}
-                className="relative"
-                onMouseEnter={() => openDrop(i)}
-                onMouseLeave={closeDrop}
-              >
-                <button
-                  onClick={() => {
-                    setModule(grp.module)
-                    setOpenIdx(null)
-                  }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer"
-                  style={{
-                    color: isActive ? "var(--primary)" : "rgba(255,255,255,0.85)",
-                    background: isActive ? "rgba(245,158,11,0.18)" : "transparent",
-                  }}
+        {/* 3. Grouped on the Right: Nav Tabs + Language + Theme */}
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Navigation tabs */}
+          <nav className="hidden md:flex items-center gap-1">
+            {NAV_GROUPS.map((grp, i) => {
+              const isActive =
+                grp.module === activeModule || grp.children?.some(c => c.module === activeModule)
+              return (
+                <div
+                  key={i}
+                  className="relative"
+                  onMouseEnter={() => openDrop(i)}
+                  onMouseLeave={closeDrop}
                 >
-                  <span className="text-sm">{grp.icon}</span>
-                  {TR[lang][grp.label]}
-                  {grp.children && (
-                    <svg width="9" height="6" viewBox="0 0 9 6" fill="none" style={{ opacity: 0.6 }}>
-                      <path d="M1 1l3.5 4L8 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </button>
-
-                {openIdx === i && grp.children && (
-                  <div
-                    className="dropdown-enter absolute top-full left-0 mt-2 min-w-44 rounded-2xl shadow-2xl border py-2 z-50"
-                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
-                    onMouseEnter={() => openDrop(i)}
-                    onMouseLeave={closeDrop}
+                  <button
+                    onClick={() => {
+                      setModule(grp.module)
+                      setOpenIdx(null)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer"
+                    style={{
+                      color: isActive ? "var(--primary)" : "rgba(255,255,255,0.85)",
+                      background: isActive ? "rgba(245,158,11,0.18)" : "transparent",
+                    }}
                   >
-                    {grp.children.map((sub, j) => (
-                      <button
-                        key={j}
-                        onClick={() => {
-                          setModule(sub.module)
-                          setOpenIdx(null)
-                        }}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-left transition-all cursor-pointer"
-                        style={{
-                          color: sub.module === activeModule ? "var(--primary)" : "var(--foreground)",
-                          background: sub.module === activeModule ? "var(--muted)" : "transparent",
-                        }}
-                      >
-                        <span className="w-5 text-center">{sub.icon}</span>
-                        {TR[lang][sub.label]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </nav>
+                    <span className="text-sm">{grp.icon}</span>
+                    {TR[lang][grp.label]}
+                    {grp.children && (
+                      <svg width="9" height="6" viewBox="0 0 9 6" fill="none" style={{ opacity: 0.6 }}>
+                        <path d="M1 1l3.5 4L8 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </button>
 
-        {/* Right controls */}
-        <div className="flex items-center gap-2.5 ml-auto shrink-0">
+                  {openIdx === i && grp.children && (
+                    <div
+                      className="dropdown-enter absolute top-full right-0 mt-2 min-w-44 rounded-2xl shadow-2xl border py-2 z-50"
+                      style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                      onMouseEnter={() => openDrop(i)}
+                      onMouseLeave={closeDrop}
+                    >
+                      {grp.children.map((sub, j) => (
+                        <button
+                          key={j}
+                          onClick={() => {
+                            setModule(sub.module)
+                            setOpenIdx(null)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-left transition-all cursor-pointer"
+                          style={{
+                            color: sub.module === activeModule ? "var(--primary)" : "var(--foreground)",
+                            background: sub.module === activeModule ? "var(--muted)" : "transparent",
+                          }}
+                        >
+                          <span className="w-5 text-center">{sub.icon}</span>
+                          {TR[lang][sub.label]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </nav>
+
           {/* Sync status badge with pending counter */}
           <div
             className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-inner"
@@ -182,21 +187,27 @@ export default function TopBar({
             )}
           </div>
 
-          {/* Language toggle */}
-          <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "rgba(255,255,255,0.14)" }}>
-            {langs.map(l => (
-              <button
-                key={l.value}
-                onClick={() => setLang(l.value)}
-                className="px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer"
-                style={{
-                  background: lang === l.value ? "var(--primary)" : "transparent",
-                  color: lang === l.value ? "#fff" : "rgba(255,255,255,0.6)",
-                }}
-              >
-                {l.label}
-              </button>
-            ))}
+          {/* Language selector dropdown */}
+          <div className="relative">
+            <select
+              value={lang}
+              onChange={e => setLang(e.target.value as Lang)}
+              className="appearance-none px-3 py-1.5 pr-7 rounded-lg text-xs font-bold border transition-all cursor-pointer outline-none shadow-sm"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                borderColor: "rgba(255,255,255,0.14)",
+                color: "#fff",
+              }}
+            >
+              {langs.map(l => (
+                <option key={l.value} value={l.value} style={{ background: "var(--card)", color: "var(--foreground)" }}>
+                  🌐 {l.name} ({l.label})
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-white/50 text-[10px]">
+              ▼
+            </div>
           </div>
 
           {/* Theme button */}

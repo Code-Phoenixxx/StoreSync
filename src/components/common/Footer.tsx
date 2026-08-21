@@ -37,8 +37,8 @@ export default function Footer({ lang, setModule }: { lang: Lang; setModule: (m:
     {
       heading: "Contact",
       links: [
-        { label: "📞 1800-DUKAAN-OS" },
-        { label: "📧 help@dukaanos.in" },
+        { label: "📞 1800-STORE-SYNC" },
+        { label: "📧 help@storesyncos.in" },
         { label: "💬 WhatsApp Support" },
         { label: "🕐 Mon–Sat, 8AM–9PM" },
       ],
@@ -61,7 +61,7 @@ export default function Footer({ lang, setModule }: { lang: Lang; setModule: (m:
                     {link.module ? (
                       <button
                         onClick={() => setModule(link.module!)}
-                        className="text-sm text-left transition-all hover:opacity-100"
+                        className="text-sm text-left transition-all hover:opacity-100 cursor-pointer"
                         style={{ color: "rgba(255,255,255,0.65)" }}
                       >
                         {link.label}
@@ -87,7 +87,7 @@ export default function Footer({ lang, setModule }: { lang: Lang; setModule: (m:
             <span className="text-2xl">🏪</span>
             <div>
               <p className="font-display font-black text-base" style={{ color: "var(--primary)" }}>
-                DukaanOS
+                StoreSyncOS
               </p>
               <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>
                 Offline-first · AI-powered · Made for Bharat
@@ -100,7 +100,7 @@ export default function Footer({ lang, setModule }: { lang: Lang; setModule: (m:
               🌐 EN · हिंदी · বাংলা
             </span>
             <span className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-              © {year} DukaanOS. All rights reserved.
+              © {year} StoreSyncOS. All rights reserved.
             </span>
           </div>
         </div>

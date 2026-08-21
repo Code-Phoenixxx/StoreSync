@@ -28,11 +28,11 @@ export default function ContactModule({ lang }: { lang: Lang }) {
         {/* Contact info cards */}
         <div className="space-y-4">
           <div className="rounded-3xl p-6 shadow-lg" style={{ background: "var(--secondary)" }}>
-            <h3 className="font-display font-bold text-xl text-white mb-4">DukaanOS Merchant Care</h3>
+            <h3 className="font-display font-bold text-xl text-white mb-4">StoreSyncOS Merchant Care</h3>
             <div className="space-y-3.5">
               {[
-                { icon: "📞", label: "Toll-Free Support Helpline", value: "1800-DUKAAN-OS (Toll Free)" },
-                { icon: "📧", label: "Support Email", value: "help@dukaanos.in" },
+                { icon: "📞", label: "Toll-Free Support Helpline", value: "1800-STORE-SYNC (Toll Free)" },
+                { icon: "📧", label: "Support Email", value: "help@storesyncos.in" },
                 { icon: "💬", label: "Instant WhatsApp Merchant Group", value: "+91 98765 00000" },
                 { icon: "🕐", label: "Operating Hours", value: "Mon–Sat, 8:00 AM – 9:00 PM IST" },
               ].map(x => (
