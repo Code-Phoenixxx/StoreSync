@@ -1,0 +1,10 @@
+{
+  "description": "Empowers shopkeepers with a smart, multilingual dashboard featuring inventory, billing, analytics, AI restock tips, voice assistant, and offline support.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
