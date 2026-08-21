@@ -76,6 +76,23 @@ const SAMPLE_BILLS: { title: string; subtitle: string; icon: string; data: Parse
       ],
     },
   },
+  {
+    title: "Handwritten Mandi Parchi (कच्ची पर्ची)",
+    subtitle: "Handwritten local supplier slip & grain weights",
+    icon: "✍️",
+    data: {
+      supplierName: "Sharma Kirana Wholesale & Mandi Slip",
+      invoiceNumber: "KACCHA-089",
+      invoiceDate: new Date().toISOString().split("T")[0],
+      totalAmount: 2750,
+      gstAmount: 0,
+      items: [
+        { id: "1", name: "Chana Dal (चना दाल) 1kg", category: "Pulses", quantity: 15, costPrice: 85, sellingPrice: 105 },
+        { id: "2", name: "Haldi Powder (हल्दी) 500g", category: "Spices", quantity: 10, costPrice: 60, sellingPrice: 80 },
+        { id: "3", name: "Mustard Oil Pouch (सरसों तेल)", category: "Cooking Oil", quantity: 12, costPrice: 115, sellingPrice: 140 },
+      ],
+    },
+  },
 ]
 
 export default function OCRModule({ lang }: { lang: Lang }) {
@@ -166,13 +183,15 @@ export default function OCRModule({ lang }: { lang: Lang }) {
       const geminiKey = import.meta.env.VITE_GEMINI_API_KEY
       if (geminiKey && navigator.onLine && !sampleData && imageDataOrSample.startsWith("data:image")) {
         const base64Data = imageDataOrSample.split(",")[1]
-        const prompt = `Extract all line items, supplier name, invoice number, and prices from this supplier receipt. Return ONLY valid JSON format:
+        const prompt = `You are an expert OCR and invoice extraction AI specialized in Indian retail kirana stores, printed wholesale invoices, and handwritten supplier slips (कच्ची पर्ची / मंडी पर्ची).
+Extract all line items, supplier name, invoice number, quantities, and cost prices from this receipt image (supporting handwritten text, Hindi/English names, and messy handwriting).
+Return ONLY valid JSON format:
         {
-          "supplierName": "Supplier Name",
+          "supplierName": "Supplier / Mandi Vendor Name",
           "invoiceNumber": "INV-1234",
           "invoiceDate": "YYYY-MM-DD",
           "totalAmount": 1000,
-          "gstAmount": 50,
+          "gstAmount": 0,
           "items": [
             { "id": "1", "name": "Item Name", "category": "Staples", "quantity": 10, "costPrice": 90, "sellingPrice": 110, "barcode": "890123" }
           ]
