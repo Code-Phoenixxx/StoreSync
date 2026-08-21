@@ -3,6 +3,8 @@ import { Bill, BillItem, Lang, Product, ShopInfo } from "../../types"
 import { TR } from "../../constants/translations"
 import { db } from "../../services/storage"
 import ThermalReceipt from "./ThermalReceipt"
+import ScanBillModal from "./ScanBillModal"
+import BillHistoryModal from "./BillHistoryModal"
 
 export default function BillingModule({ lang }: { lang: Lang }) {
   const [products, setProducts] = useState<Product[]>(() => db.getProducts())
@@ -13,9 +15,12 @@ export default function BillingModule({ lang }: { lang: Lang }) {
   const [paymentType, setPaymentType] = useState<"CASH" | "UPI" | "KHATA">("CASH")
   const [completedBill, setCompletedBill] = useState<Bill | null>(null)
   const [showPrintModal, setShowPrintModal] = useState(false)
+  const [showScanModal, setShowScanModal] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [recentBills, setRecentBills] = useState<Bill[]>(() => db.getBills())
   const [shopInfo] = useState<ShopInfo>(() => db.getShopInfo())
   const [stockAlert, setStockAlert] = useState<string | null>(null)
+
 
   // Reload products whenever storage changes or module mounts
   useEffect(() => {
@@ -45,6 +50,28 @@ export default function BillingModule({ lang }: { lang: Lang }) {
       }
       return [...prev, { product: p, qty: 1 }]
     })
+  }
+
+  function handleImportScannedItems(items: { product: Product; qty: number }[]) {
+    let addedCount = 0
+    setCart(prev => {
+      let updated = [...prev]
+      items.forEach(newItem => {
+        const exIdx = updated.findIndex(x => x.product.id === newItem.product.id)
+        if (exIdx >= 0) {
+          const newQty = Math.min(updated[exIdx].product.stock, updated[exIdx].qty + newItem.qty)
+          updated[exIdx] = { ...updated[exIdx], qty: newQty }
+        } else {
+          updated.push({
+            product: newItem.product,
+            qty: Math.min(newItem.product.stock, newItem.qty),
+          })
+        }
+        addedCount += newItem.qty
+      })
+      return updated
+    })
+    triggerStockAlert(`🎉 Successfully imported ${items.length} items from scanned bill!`)
   }
 
   function handleBarcodeSearch(query: string) {
@@ -149,12 +176,18 @@ export default function BillingModule({ lang }: { lang: Lang }) {
             🧾 {TR[lang].billing} & POS
           </h2>
           <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-            Fast checkout with real-time stock deduction, barcode lookup & 58mm/80mm thermal receipts
+            Fast checkout with real-time stock deduction, barcode lookup & printable bills
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowScanModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all hover:opacity-90 active:scale-95 cursor-pointer bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+          >
+            📸 Scan Bill / Slip
+          </button>
           <span className="text-xs px-3 py-1.5 rounded-xl border font-mono font-bold" style={{ borderColor: "var(--border)", color: "var(--muted-foreground)" }}>
-            📦 {products.reduce((acc, p) => acc + p.stock, 0)} items in stock
+            📦 {products.reduce((acc, p) => acc + p.stock, 0)} in stock
           </span>
         </div>
       </div>
@@ -162,16 +195,27 @@ export default function BillingModule({ lang }: { lang: Lang }) {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-5">
         {/* Product picker & quick scanner */}
         <div className="md:col-span-3 space-y-4">
-          <div className="relative">
-            <input
-              value={search}
-              onChange={e => handleBarcodeSearch(e.target.value)}
-              placeholder="🔍 Search product name, category, or scan barcode to add..."
-              className="w-full px-4 py-3 rounded-2xl text-sm outline-none border shadow-sm pl-10"
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                value={search}
+                onChange={e => handleBarcodeSearch(e.target.value)}
+                placeholder="🔍 Search product, category, or scan barcode..."
+                className="w-full px-4 py-3 rounded-2xl text-sm outline-none border shadow-sm pl-10"
+                style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
+              />
+              <span className="absolute left-3.5 top-3.5 text-sm opacity-60">🏷️</span>
+            </div>
+            <button
+              onClick={() => setShowScanModal(true)}
+              className="px-4 py-3 rounded-2xl border text-xs font-bold flex items-center gap-1.5 hover:border-amber-500 transition-all cursor-pointer shrink-0 shadow-sm"
               style={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }}
-            />
-            <span className="absolute left-3.5 top-3.5 text-sm opacity-60">📷</span>
+              title="Scan physical bill or customer chit"
+            >
+              📸 Scan Bill
+            </button>
           </div>
+
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {filtered.map(p => {
@@ -351,11 +395,21 @@ export default function BillingModule({ lang }: { lang: Lang }) {
 
       {/* Recent Bills & Re-Print Table */}
       <div className="rounded-3xl border p-5 space-y-3" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-        <div className="flex items-center justify-between">
-          <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
-            🕒 Recent Invoices & Print Bill
-          </h3>
-          <span className="text-xs text-gray-500 font-mono">{recentBills.length} recorded bills</span>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
+              🕒 Recent Invoices & Print Bill
+            </h3>
+            <span className="text-xs text-gray-500 font-mono">{recentBills.length} recorded bills in store</span>
+          </div>
+
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            className="px-4 py-2 rounded-xl text-xs font-bold border transition-all hover:bg-amber-500 hover:text-white hover:border-amber-500 cursor-pointer shadow-xs flex items-center gap-1.5"
+            style={{ borderColor: "var(--border)", color: "var(--foreground)", background: "var(--muted)" }}
+          >
+            📜 View Detailed History ({recentBills.length})
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -400,7 +454,6 @@ export default function BillingModule({ lang }: { lang: Lang }) {
         </div>
       </div>
 
-
       {/* Printable Thermal Receipt Modal */}
       {showPrintModal && completedBill && (
         <ThermalReceipt
@@ -409,7 +462,35 @@ export default function BillingModule({ lang }: { lang: Lang }) {
           onClose={() => setShowPrintModal(false)}
         />
       )}
+
+      {/* AI Scan Bill & Slip Modal */}
+      {showScanModal && (
+        <ScanBillModal
+          availableProducts={products}
+          onClose={() => setShowScanModal(false)}
+          onAddItemsToCart={handleImportScannedItems}
+        />
+      )}
+
+      {/* Detailed Bill History Modal */}
+      {showHistoryModal && (
+        <BillHistoryModal
+          bills={recentBills}
+          onClose={() => setShowHistoryModal(false)}
+          onPrintBill={bill => {
+            setShowHistoryModal(false)
+            openReceipt(bill)
+          }}
+          onDeleteBill={billId => {
+            const updated = db.deleteBill(billId)
+            setRecentBills(updated)
+            triggerStockAlert(`🗑️ Invoice ${billId} has been deleted.`)
+          }}
+        />
+      )}
     </div>
   )
 }
+
+
 
