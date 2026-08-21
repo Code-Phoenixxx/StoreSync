@@ -7,14 +7,23 @@ export default function SettingsModule({
   setLang,
   theme,
   setTheme,
+  onLogout,
 }: {
   lang: Lang
   setLang: (l: Lang) => void
   theme: Theme
   setTheme: (t: Theme) => void
+  onLogout?: () => void
 }) {
   const shopInfo = db.getShopInfo()
   const syncQueue = db.getSyncQueue()
+
+  function handleLockApp() {
+    if (confirm("Lock DukaanOS? You will need to enter your Security PIN to unlock.")) {
+      db.clearSession()
+      if (onLogout) onLogout()
+    }
+  }
 
   const themes: { value: Theme; label: string; desc: string }[] = [
     { value: "light", label: "Light Theme", desc: "Clean warm cream background" },
@@ -34,15 +43,21 @@ export default function SettingsModule({
           ⚙️ {TR[lang].settings} & Preferences
         </h2>
         <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-          Configure shop profile, languages, themes, local database backups, and sync settings
+          Configure shop profile, languages, themes, local database backups, and security settings
         </p>
       </div>
 
-      {/* Shop Profile Summary */}
-      <div className="rounded-3xl border p-5 space-y-3 shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-        <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
-          🏪 Shop Profile & Authentication
-        </h3>
+      {/* Shop Profile & Session Card */}
+      <div className="rounded-3xl border p-5 space-y-4 shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+        <div className="flex items-center justify-between">
+          <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
+            🏪 Shop Authentication & Security
+          </h3>
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">
+            ✓ Authenticated Session
+          </span>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
           <div>
             <span style={{ color: "var(--muted-foreground)" }}>Shop Name:</span>
@@ -57,11 +72,20 @@ export default function SettingsModule({
             </p>
           </div>
           <div>
-            <span style={{ color: "var(--muted-foreground)" }}>Shop Category:</span>
+            <span style={{ color: "var(--muted-foreground)" }}>Category:</span>
             <p className="font-bold font-display text-sm mt-0.5" style={{ color: "var(--foreground)" }}>
               {shopInfo.shopType || "Retail Kirana"}
             </p>
           </div>
+        </div>
+
+        <div className="pt-2 border-t flex gap-3" style={{ borderColor: "var(--border)" }}>
+          <button
+            onClick={handleLockApp}
+            className="px-4 py-2 rounded-xl text-xs font-bold border border-red-300 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            🔒 Lock App / Switch Shop
+          </button>
         </div>
       </div>
 

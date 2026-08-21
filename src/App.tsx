@@ -24,11 +24,12 @@ import SettingsModule from "./modules/settings/SettingsModule"
 import ContactModule from "./modules/contact/ContactModule"
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("welcome")
+  const initialSession = db.getSession()
+  const [screen, setScreen] = useState<Screen>(initialSession.isAuthenticated ? "app" : "welcome")
   const [lang, setLang] = useState<Lang>("en")
   const [theme, setTheme] = useState<Theme>("light")
   const [activeModule, setActiveModule] = useState<Module>("dashboard")
-  const [shopInfo, setShopInfo] = useState<ShopInfo>(() => db.getShopInfo())
+  const [shopInfo, setShopInfo] = useState<ShopInfo>(initialSession.shopInfo)
   const [online, setOnline] = useState<boolean>(() => db.isOnline())
   const [syncing, setSyncing] = useState<boolean>(false)
   const [showThemePage, setShowThemePage] = useState<boolean>(false)
@@ -68,6 +69,10 @@ export default function App() {
   function handleLogin(info: ShopInfo) {
     setShopInfo(info)
     setScreen("app")
+  }
+
+  function handleLogout() {
+    setScreen("login")
   }
 
   // ── Onboarding Flows ──
@@ -110,7 +115,15 @@ export default function App() {
     analytics: <AnalyticsModule lang={lang} />,
     copilot: <AICopilotModule lang={lang} />,
     voice: <VoiceModule lang={lang} />,
-    settings: <SettingsModule lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} />,
+    settings: (
+      <SettingsModule
+        lang={lang}
+        setLang={setLang}
+        theme={theme}
+        setTheme={setTheme}
+        onLogout={handleLogout}
+      />
+    ),
     contact: <ContactModule lang={lang} />,
   }
 

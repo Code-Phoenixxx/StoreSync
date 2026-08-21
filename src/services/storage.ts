@@ -1,4 +1,4 @@
-import { Bill, Customer, Product, ShopInfo, Supplier } from "../types"
+import { AuthSession, Bill, Customer, Product, ShopInfo, Supplier } from "../types"
 import { INITIAL_CUSTOMERS, INITIAL_PRODUCTS, INITIAL_SUPPLIERS } from "../constants/translations"
 import { cloudApi } from "./api"
 
@@ -8,6 +8,7 @@ const KEYS = {
   SUPPLIERS: "dukaanos_suppliers_v1",
   BILLS: "dukaanos_bills_v1",
   SHOP_INFO: "dukaanos_shop_info_v1",
+  AUTH_SESSION: "dukaanos_auth_session_v1",
   SYNC_QUEUE: "dukaanos_sync_queue_v1",
 }
 
@@ -44,6 +45,40 @@ class StorageService {
     this.syncListeners.forEach(cb => cb(online))
   }
 
+  // ── Authentication & Session Persistence ──────────────────────────────────
+  public getSession(): AuthSession {
+    try {
+      const data = localStorage.getItem(KEYS.AUTH_SESSION)
+      if (data) return JSON.parse(data)
+    } catch {}
+
+    const shopInfo = this.getShopInfo()
+    return {
+      isAuthenticated: false,
+      shopInfo,
+    }
+  }
+
+  public saveSession(shopInfo: ShopInfo, token?: string): AuthSession {
+    const session: AuthSession = {
+      isAuthenticated: true,
+      shopInfo,
+      token: token || `token_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      lastActive: new Date().toISOString(),
+    }
+    localStorage.setItem(KEYS.AUTH_SESSION, JSON.stringify(session))
+    this.saveShopInfo(shopInfo)
+    return session
+  }
+
+  public clearSession(): void {
+    localStorage.removeItem(KEYS.AUTH_SESSION)
+  }
+
+  public hasActiveSession(): boolean {
+    return this.getSession().isAuthenticated
+  }
+
   // ── Sync Queue (Offline-First Buffer) ──────────────────────────────────────
   private queueAction(action: { type: string; payload: unknown }) {
     const queue = this.getSyncQueue()
@@ -70,7 +105,6 @@ class StorageService {
     // Attempt cloud push
     const success = await cloudApi.syncBatch(queue)
     if (success || !import.meta.env.VITE_API_URL) {
-      // If synced or working in simulated cloud mode
       localStorage.removeItem(KEYS.SYNC_QUEUE)
       console.log(`[DukaanOS Sync Engine] Sync batch completed successfully.`)
     }
