@@ -1,163 +1,73 @@
 import { useState } from "react"
 import { Lang } from "../../types"
 import { TR } from "../../constants/translations"
-import StatCard from "../../components/common/StatCard"
 import { db } from "../../services/storage"
+import StatCard from "../../components/common/StatCard"
+
+/**
+ * ============================================================================
+ * MODULE: ANALYTICS & INSIGHTS
+ * OWNER: Person 3 (AI & Smart Systems Specialist)
+ * ============================================================================
+ * TASKS FOR PERSON 3 TO IMPLEMENT:
+ * 1. [ ] Make analytics completely functionable from live `db.getBills()` and `db.getProducts()`.
+ * 2. [ ] Render interactive sales revenue trends (Daily / Weekly / Monthly).
+ * 3. [ ] Calculate category margins & top-selling products.
+ * ============================================================================
+ */
 
 export default function AnalyticsModule({ lang }: { lang: Lang }) {
-  const [timeframe, setTimeframe] = useState<"week" | "month">("week")
-
   const bills = db.getBills()
-  const products = db.getProducts()
-  const customers = db.getCustomers()
-
   const totalRevenue = bills.reduce((s, b) => s + b.total, 0)
-  const totalCredit = customers.reduce((s, c) => s + c.credit, 0)
-  const totalItemsSold = bills.reduce((s, b) => s + b.items, 0)
-
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-  const weeklySales = [1240, 890, 1560, 1100, 2340, 3100, 2800]
-  const monthlySales = [8400, 12200, 15800, 18900, 22100, 27400, 31000]
-
-  const currentDataset = timeframe === "week" ? weeklySales : monthlySales
-  const maxSales = Math.max(...currentDataset)
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: "var(--border)" }}>
         <div>
           <h2 className="font-display font-black text-2xl" style={{ color: "var(--foreground)" }}>
-            📊 {TR[lang].analytics} & Shop Health
+            📊 {TR[lang].analytics} & Reports
           </h2>
           <p className="text-xs mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-            Live revenue breakdown, margin tracking, inventory turnover, and customer credit exposure
+            Assigned to: <strong>Person 3 (AI & Smart Systems Specialist)</strong>
           </p>
         </div>
-
-        {/* Timeframe selector */}
-        <div className="flex rounded-xl p-1 border shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-          <button
-            onClick={() => setTimeframe("week")}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-            style={{
-              background: timeframe === "week" ? "var(--primary)" : "transparent",
-              color: timeframe === "week" ? "#fff" : "var(--muted-foreground)",
-            }}
-          >
-            This Week
-          </button>
-          <button
-            onClick={() => setTimeframe("month")}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-            style={{
-              background: timeframe === "month" ? "var(--primary)" : "transparent",
-              color: timeframe === "month" ? "#fff" : "var(--muted-foreground)",
-            }}
-          >
-            This Month
-          </button>
-        </div>
+        <span className="text-xs px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-bold">
+          Under Construction by Person 3
+        </span>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          icon="💰"
-          label={timeframe === "week" ? "Total Revenue" : "Monthly Revenue"}
-          value={`₹${(totalRevenue + (timeframe === "month" ? 18000 : 0)).toLocaleString("en-IN")}`}
-          sub="↑ 18.4% growth"
-          color="var(--accent)"
-        />
-        <StatCard
-          icon="📦"
-          label="Total Units Sold"
-          value={`${totalItemsSold + 340} pcs`}
-          sub={`Across ${products.length} catalogue items`}
-        />
-        <StatCard
-          icon="💳"
-          label="Khata Credit Total"
-          value={`₹${totalCredit.toLocaleString("en-IN")}`}
-          sub={`${customers.filter(c => c.credit > 0).length} active debtors`}
-          color="var(--destructive)"
-        />
-        <StatCard
-          icon="🏆"
-          label="Top Velocity Product"
-          value="Parle-G & Salt"
-          sub="38% of store volume"
-          color="var(--primary)"
-        />
-      </div>
-
-      {/* Sales Trend Bar Chart */}
-      <div className="rounded-3xl border p-6 shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
-            📈 Revenue Velocity ({timeframe === "week" ? "Daily Breakdown" : "4-Week Progression"})
-          </h3>
-          <span className="text-xs font-mono font-semibold" style={{ color: "var(--primary)" }}>
-            Peak Day: Sat (₹3,100)
-          </span>
-        </div>
-
-        <div className="flex items-end gap-3 md:gap-6 h-48 pt-4">
-          {days.map((d, i) => {
-            const val = currentDataset[i]
-            const isHighest = val === maxSales
-            return (
-              <div key={d} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                <span className="text-[11px] font-mono font-bold" style={{ color: "var(--muted-foreground)" }}>
-                  ₹{(val / 1000).toFixed(1)}k
-                </span>
-                <div
-                  className="w-full rounded-t-xl transition-all duration-500 shadow-sm"
-                  style={{
-                    height: `${(val / maxSales) * 75}%`,
-                    background: isHighest ? "var(--primary)" : "var(--secondary)",
-                    opacity: isHighest ? 1 : 0.65,
-                  }}
-                />
-                <span
-                  className="text-xs font-bold"
-                  style={{ color: isHighest ? "var(--primary)" : "var(--muted-foreground)" }}
-                >
-                  {d}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Category Breakdown */}
-      <div className="rounded-3xl border p-6 shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-        <h3 className="font-display font-bold text-base mb-4" style={{ color: "var(--foreground)" }}>
-          🛍️ Sales & Profit Margin by Category
+      {/* Developer Tasks Checklist Card */}
+      <div
+        className="rounded-2xl border p-5 space-y-3"
+        style={{ background: "rgba(245,158,11,0.06)", borderColor: "var(--border)" }}
+      >
+        <h3 className="font-display font-bold text-sm" style={{ color: "var(--primary)" }}>
+          🛠️ Person 3 Implementation Checklist:
         </h3>
-        <div className="space-y-3.5">
-          {[
-            { cat: "Grocery & Staples", pct: 38, margin: "16%", color: "var(--primary)" },
-            { cat: "Snacks & Confectionery", pct: 24, margin: "28%", color: "var(--accent)" },
-            { cat: "Dairy & Packaged", pct: 18, margin: "12%", color: "var(--secondary)" },
-            { cat: "Personal Care & FMCG", pct: 12, margin: "32%", color: "#8B5CF6" },
-            { cat: "Instant Food & Others", pct: 8, margin: "22%", color: "#EC4899" },
-          ].map(x => (
-            <div key={x.cat} className="space-y-1">
-              <div className="flex justify-between text-xs font-semibold">
-                <span style={{ color: "var(--foreground)" }}>{x.cat}</span>
-                <span style={{ color: "var(--muted-foreground)" }}>
-                  Contribution: <strong style={{ color: x.color }}>{x.pct}%</strong> · Profit Margin:{" "}
-                  <strong className="text-emerald-500">{x.margin}</strong>
-                </span>
-              </div>
-              <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: "var(--muted)" }}>
-                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${x.pct}%`, background: x.color }} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <ul className="text-xs space-y-2 font-medium" style={{ color: "var(--foreground)" }}>
+          <li>⏳ <strong>Task 1:</strong> Make <strong>Analytics Functionable</strong> from live DB bills & inventory data.</li>
+          <li>⏳ <strong>Task 2:</strong> Build <strong>Sales Revenue Trend Chart</strong> (bar chart / line graph).</li>
+          <li>⏳ <strong>Task 3:</strong> Build <strong>Category Profit Margin & Top Selling Items</strong> breakdown.</li>
+        </ul>
+      </div>
+
+      {/* Basic Metrics Preview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard icon="💰" label="Total Revenue (Live)" value={`₹${totalRevenue.toLocaleString("en-IN")}`} sub={`${bills.length} bills recorded`} color="var(--accent)" />
+        <StatCard icon="📦" label="Total Items Sold" value="TODO (Person 3)" sub="Calculate from items" />
+        <StatCard icon="📈" label="Gross Profit" value="TODO (Person 3)" sub="Calculate margins" />
+        <StatCard icon="🏆" label="Top Product" value="TODO (Person 3)" sub="Velocity analysis" />
+      </div>
+
+      {/* Chart Skeleton Box */}
+      <div className="rounded-3xl border p-8 text-center space-y-3 shadow-sm" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+        <p className="font-display font-bold text-lg" style={{ color: "var(--foreground)" }}>
+          📈 Sales Velocity Trend Graph
+        </p>
+        <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+          (TODO: Person 3 to render dynamic SVG / Tailwind bars based on live weekly revenue)
+        </p>
       </div>
     </div>
   )

@@ -68,6 +68,16 @@ export interface ShopInfo {
   ownerName: string
   phone?: string
   currency?: string
+  pin?: string
+  token?: string
+  createdAt?: string
+}
+
+export interface AuthSession {
+  isAuthenticated: boolean
+  shopInfo: ShopInfo
+  token?: string
+  lastActive?: string
 }
 
 export interface ChatMessage {

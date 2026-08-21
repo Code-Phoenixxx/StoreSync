@@ -42,6 +42,7 @@ interface TopBarProps {
   shopName: string
   online: boolean
   syncing: boolean
+  pendingSyncCount?: number
   onOpenTheme: () => void
 }
 
@@ -54,6 +55,7 @@ export default function TopBar({
   shopName,
   online,
   syncing,
+  pendingSyncCount = 0,
   onOpenTheme,
 }: TopBarProps) {
   const [openIdx, setOpenIdx] = useState<number | null>(null)
@@ -81,7 +83,7 @@ export default function TopBar({
         {/* Logo — clicking goes to dashboard */}
         <button
           onClick={() => setModule("dashboard")}
-          className="flex items-center gap-2.5 font-display font-black text-xl select-none shrink-0"
+          className="flex items-center gap-2.5 font-display font-black text-xl select-none shrink-0 cursor-pointer"
           style={{ color: "var(--primary)" }}
           title="Go to Dashboard"
         >
@@ -108,7 +110,7 @@ export default function TopBar({
                     setModule(grp.module)
                     setOpenIdx(null)
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap cursor-pointer"
                   style={{
                     color: isActive ? "var(--primary)" : "rgba(255,255,255,0.85)",
                     background: isActive ? "rgba(245,158,11,0.18)" : "transparent",
@@ -137,7 +139,7 @@ export default function TopBar({
                           setModule(sub.module)
                           setOpenIdx(null)
                         }}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-left transition-all"
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-medium text-left transition-all cursor-pointer"
                         style={{
                           color: sub.module === activeModule ? "var(--primary)" : "var(--foreground)",
                           background: sub.module === activeModule ? "var(--muted)" : "transparent",
@@ -156,16 +158,28 @@ export default function TopBar({
 
         {/* Right controls */}
         <div className="flex items-center gap-2.5 ml-auto shrink-0">
-          {/* Sync status badge */}
+          {/* Sync status badge with pending counter */}
           <div
-            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shadow-inner"
+            className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold shadow-inner"
             style={{
-              background: online ? "rgba(16,185,129,0.18)" : "rgba(239,68,68,0.18)",
-              color: online ? "#10B981" : "#EF4444",
+              background: online
+                ? syncing
+                  ? "rgba(245,158,11,0.18)"
+                  : "rgba(16,185,129,0.18)"
+                : "rgba(239,68,68,0.18)",
+              color: online ? (syncing ? "#F59E0B" : "#10B981") : "#EF4444",
             }}
           >
-            <span className={`w-2 h-2 rounded-full shrink-0 ${syncing ? "animate-ping" : ""}`} style={{ background: online ? "#10B981" : "#EF4444" }} />
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${syncing ? "animate-ping" : ""}`}
+              style={{ background: online ? (syncing ? "#F59E0B" : "#10B981") : "#EF4444" }}
+            />
             {online ? (syncing ? TR[lang].syncing : TR[lang].synced) : TR[lang].offlineMode}
+            {pendingSyncCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-md bg-red-500 text-white font-mono text-[10px]">
+                {pendingSyncCount} pending
+              </span>
+            )}
           </div>
 
           {/* Language toggle */}
@@ -174,7 +188,7 @@ export default function TopBar({
               <button
                 key={l.value}
                 onClick={() => setLang(l.value)}
-                className="px-2.5 py-1.5 text-xs font-bold transition-all"
+                className="px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer"
                 style={{
                   background: lang === l.value ? "var(--primary)" : "transparent",
                   color: lang === l.value ? "#fff" : "rgba(255,255,255,0.6)",
@@ -188,7 +202,7 @@ export default function TopBar({
           {/* Theme button */}
           <button
             onClick={onOpenTheme}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all hover:opacity-80"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all hover:opacity-80 cursor-pointer"
             style={{ background: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.14)", color: "#fff" }}
             title="Change theme"
           >
@@ -197,7 +211,7 @@ export default function TopBar({
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all"
+            className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition-all cursor-pointer"
             style={{ color: "#fff" }}
             onClick={() => setMobileOpen(!mobileOpen)}
           >

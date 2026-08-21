@@ -4,7 +4,7 @@ export const TR = {
   en: {
     appName: "DukaanOS",
     tagline: "Your Complete Shop Management Solution",
-    enterShop: "Enter Your Shop →",
+    enterShop: "Enter Your Shop",
     chooseLanguage: "Choose Your Language",
     langSubtitle: "Select the language you're most comfortable with",
     continue: "Continue",
@@ -72,7 +72,7 @@ export const TR = {
   hi: {
     appName: "दुकानOS",
     tagline: "आपका संपूर्ण दुकान प्रबंधन समाधान",
-    enterShop: "अपनी दुकान में प्रवेश करें →",
+    enterShop: "अपनी दुकान में प्रवेश करें",
     chooseLanguage: "अपनी भाषा चुनें",
     langSubtitle: "वह भाषा चुनें जिसमें आप सबसे सहज हों",
     continue: "आगे बढ़ें",
@@ -140,7 +140,7 @@ export const TR = {
   bn: {
     appName: "দুকানOS",
     tagline: "আপনার সম্পূর্ণ দোকান ব্যবস্থাপনা সমাধান",
-    enterShop: "আপনার দোকানে প্রবেশ করুন →",
+    enterShop: "আপনার দোকানে প্রবেশ করুন",
     chooseLanguage: "আপনার ভাষা বেছে নিন",
     langSubtitle: "যে ভাষায় আপনি সবচেয়ে স্বাচ্ছন্দ্য বোধ করেন তা বেছে নিন",
     continue: "চালিয়ে যান",
