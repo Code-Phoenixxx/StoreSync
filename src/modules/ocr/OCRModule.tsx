@@ -106,20 +106,11 @@ export default function OCRModule({ lang }: { lang: Lang }) {
   const [parsedInvoice, setParsedInvoice] = useState<ParsedInvoice | null>(null)
   const [successToast, setSuccessToast] = useState<string | null>(null)
   const [showRawText, setShowRawText] = useState(false)
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("storesync_gemini_api_key") || "")
-  const [showKeyModal, setShowKeyModal] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
-
-  // Save API key
-  function handleSaveApiKey(k: string) {
-    setApiKey(k)
-    localStorage.setItem("storesync_gemini_api_key", k.trim())
-    setShowKeyModal(false)
-  }
 
   // Start Web Camera Feed
   async function startCamera() {
@@ -312,8 +303,8 @@ export default function OCRModule({ lang }: { lang: Lang }) {
         return
       }
 
-      // 2. If Gemini API Key is provided
-      const activeApiKey = apiKey || import.meta.env.VITE_GEMINI_API_KEY
+      // 2. If Gemini API Key is provided in .env
+      const activeApiKey = import.meta.env.VITE_GEMINI_API_KEY
       if (activeApiKey && navigator.onLine && imageDataOrSample.startsWith("data:image")) {
         setScanStatusMsg("Running Gemini 1.5 Flash Vision AI...")
         setScanProgress(40)
@@ -492,106 +483,49 @@ Return ONLY valid JSON format with this exact structure:
           </div>
         </div>
 
-        {/* Tab Controls & API Key Config */}
-        <div className="flex items-center gap-2">
+        {/* Tab Controls */}
+        <div className="flex rounded-xl p-1 border shadow-inner" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
           <button
-            onClick={() => setShowKeyModal(true)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer flex items-center gap-1.5"
-            style={{
-              borderColor: apiKey ? "rgba(16,185,129,0.4)" : "var(--border)",
-              color: apiKey ? "#10B981" : "var(--muted-foreground)",
+            onClick={() => {
+              setActiveTab("upload")
+              setParsedInvoice(null)
+              setImagePreview(null)
+              stopCamera()
             }}
-            title="Configure Gemini API Key"
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeTab === "upload" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+            }`}
           >
-            <span>{apiKey ? "🔑 Gemini Connected" : "⚙️ AI Key (Optional)"}</span>
+            📁 File Upload
           </button>
-
-          <div className="flex rounded-xl p-1 border shadow-inner" style={{ background: "var(--muted)", borderColor: "var(--border)" }}>
-            <button
-              onClick={() => {
-                setActiveTab("upload")
-                setParsedInvoice(null)
-                setImagePreview(null)
-                stopCamera()
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "upload" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              📁 File Upload
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab("camera")
-                setParsedInvoice(null)
-                setImagePreview(null)
-                startCamera()
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "camera" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              📷 Live Camera
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab("samples")
-                setParsedInvoice(null)
-                setImagePreview(null)
-                stopCamera()
-              }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "samples" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
-              }`}
-            >
-              ⚡ Demo Invoices
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setActiveTab("camera")
+              setParsedInvoice(null)
+              setImagePreview(null)
+              startCamera()
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeTab === "camera" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            📷 Live Camera
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("samples")
+              setParsedInvoice(null)
+              setImagePreview(null)
+              stopCamera()
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeTab === "samples" && !parsedInvoice ? "bg-amber-500 text-black shadow-md" : "text-neutral-600 dark:text-neutral-300 hover:text-black dark:hover:text-white"
+            }`}
+          >
+            ⚡ Demo Invoices
+          </button>
         </div>
       </div>
-
-      {/* Optional API Key Modal */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md p-6 rounded-3xl border shadow-2xl space-y-4" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-display font-bold text-base" style={{ color: "var(--foreground)" }}>
-                🔑 Google Gemini Vision API Key
-              </h3>
-              <button onClick={() => setShowKeyModal(false)} className="text-neutral-400 hover:text-neutral-600 text-xs">
-                ✕
-              </button>
-            </div>
-            <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
-              Tesseract.js OCR is already active locally. Adding a free Gemini API key enables 99.9% accuracy on handwritten Hindi & regional mandi parchi!
-            </p>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              placeholder="AIzaSy..."
-              className="w-full px-4 py-2.5 rounded-xl text-xs font-mono border outline-none"
-              style={{ background: "var(--muted)", borderColor: "var(--border)", color: "var(--foreground)" }}
-            />
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => handleSaveApiKey("")}
-                className="px-4 py-2 rounded-xl text-xs font-bold border hover:bg-neutral-100 dark:hover:bg-neutral-800 text-red-500 cursor-pointer"
-                style={{ borderColor: "var(--border)" }}
-              >
-                Clear Key
-              </button>
-              <button
-                onClick={() => handleSaveApiKey(apiKey)}
-                className="px-5 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer"
-                style={{ background: "var(--primary)", color: "#1A0A00" }}
-              >
-                Save & Connect
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Input Selection Sections */}
       {!parsedInvoice && !isScanning && (
