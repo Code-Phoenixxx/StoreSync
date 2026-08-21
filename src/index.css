@@ -182,3 +182,81 @@ input:checked + .toggle-slider::before { transform: translateX(20px); }
     radial-gradient(circle at 80% 20%, rgba(30,58,95,0.3) 0%, transparent 50%),
     radial-gradient(circle at 60% 80%, rgba(16,185,129,0.1) 0%, transparent 40%);
 }
+
+/* ==========================================================================
+   Thermal Receipt Print Media Styles
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+  
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide entire UI by default */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Make thermal receipt paper and its contents visible */
+  .thermal-receipt-paper,
+  .thermal-receipt-paper * {
+    visibility: visible !important;
+  }
+
+  .thermal-receipt-modal {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    visibility: visible !important;
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .thermal-receipt-paper {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 4mm 2mm !important;
+    margin: 0 auto !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    font-family: var(--font-mono), monospace !important;
+  }
+
+  .thermal-receipt-paper.paper-58mm {
+    width: 58mm !important;
+    max-width: 58mm !important;
+    padding: 3mm 1mm !important;
+  }
+}
+
+
