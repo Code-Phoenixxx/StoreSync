@@ -72,7 +72,7 @@ GRAND TOTAL: ₹${grandTotal}
 PAYMENT STATUS: ${bill.paid ? "PAID [COMPLETED]" : "KHATA [CREDIT]"}
 ================================
    THANK YOU! VISIT AGAIN
-  Powered by DukaanOS StoreSync
+  Powered by StoreSync
 ================================
 `.trim()
 

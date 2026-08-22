@@ -34,7 +34,7 @@ export default function OnboardingShell({
           </button>
         ) : (
           <div className="flex items-center gap-2 font-display font-black text-lg" style={{ color: "var(--primary)" }}>
-            🏪 DukaanOS
+            🏪 StoreSync
           </div>
         )}
 

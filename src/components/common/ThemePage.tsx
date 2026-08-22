@@ -72,7 +72,7 @@ export default function ThemePage({
               🎨 {TR[lang].selectTheme}
             </h2>
             <p className="text-sm mt-0.5" style={{ color: "var(--muted-foreground)" }}>
-              Choose how DukaanOS looks for you
+              Choose how StoreSync looks for you
             </p>
           </div>
           <button

@@ -2,7 +2,7 @@ import { AISuggestion, Customer, Product, Supplier } from "../types"
 
 export const TR = {
   en: {
-    appName: "DukaanOS",
+    appName: "StoreSync",
     tagline: "Your Complete Shop Management Solution",
     enterShop: "Enter Your Shop",
     chooseLanguage: "Choose Your Language",
@@ -70,7 +70,7 @@ export const TR = {
     orderNow: "Order Now",
   },
   hi: {
-    appName: "दुकानOS",
+    appName: "StoreSync",
     tagline: "आपका संपूर्ण दुकान प्रबंधन समाधान",
     enterShop: "अपनी दुकान में प्रवेश करें",
     chooseLanguage: "अपनी भाषा चुनें",
@@ -138,7 +138,7 @@ export const TR = {
     orderNow: "अभी ऑर्डर करें",
   },
   bn: {
-    appName: "দুকানOS",
+    appName: "StoreSync",
     tagline: "আপনার সম্পূর্ণ দোকান ব্যবস্থাপনা সমাধান",
     enterShop: "আপনার দোকানে প্রবেশ করুন",
     chooseLanguage: "আপনার ভাষা বেছে নিন",
