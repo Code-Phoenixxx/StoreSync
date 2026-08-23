@@ -20,6 +20,8 @@ import SupplierModule from "./modules/supplier/SupplierModule"
 import AnalyticsModule from "./modules/analytics/AnalyticsModule"
 import AICopilotModule from "./modules/copilot/AICopilotModule"
 import VoiceModule from "./modules/voice/VoiceModule"
+import VexylSTTModule from "./modules/vexyl_stt/VexylSTTModule"
+import HealthcareModule from "./modules/healthcare/HealthcareModule"
 import SettingsModule from "./modules/settings/SettingsModule"
 import ContactModule from "./modules/contact/ContactModule"
 
@@ -135,6 +137,8 @@ export default function App() {
     analytics: <AnalyticsModule lang={lang} />,
     copilot: <AICopilotModule lang={lang} />,
     voice: <VoiceModule lang={lang} />,
+    vexyl_stt: <VexylSTTModule lang={lang} />,
+    healthcare: <HealthcareModule lang={lang} />,
     settings: (
       <SettingsModule
         lang={lang}

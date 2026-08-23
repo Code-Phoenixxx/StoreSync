@@ -28,8 +28,10 @@ export const NAV_GROUPS: {
     children: [
       { label: "copilot", icon: "🤖", module: "copilot" },
       { label: "voice", icon: "🎙️", module: "voice" },
+      { label: "vexyl_stt", icon: "🗣️", module: "vexyl_stt" },
     ],
   },
+  { label: "healthcare", icon: "🏥", module: "healthcare" },
   { label: "settings", icon: "⚙️", module: "settings" },
 ]
 
