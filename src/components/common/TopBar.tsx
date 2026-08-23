@@ -31,7 +31,6 @@ export const NAV_GROUPS: {
       { label: "vexyl_stt", icon: "🗣️", module: "vexyl_stt" },
     ],
   },
-  { label: "healthcare", icon: "🏥", module: "healthcare" },
   { label: "settings", icon: "⚙️", module: "settings" },
 ]
 

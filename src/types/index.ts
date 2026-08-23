@@ -3,7 +3,7 @@ export type Lang = "en" | "hi" | "bn" | "te" | "ta" | "mr" | "gu" | "kn"
 export type Theme = "light" | "dark" | "saffron"
 export type Module =
   | "dashboard" | "catalogue" | "billing" | "pos" | "khata" | "ocr"
-  | "supplier" | "analytics" | "copilot" | "voice" | "vexyl_stt" | "healthcare" | "settings" | "contact"
+  | "supplier" | "analytics" | "copilot" | "voice" | "vexyl_stt" | "settings" | "contact"
 
 export interface Product {
   id: number
